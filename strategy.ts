@@ -445,6 +445,10 @@ export function createStrategy(p: Params = DEFAULT_PARAMS): Bot {
         const capSol = Math.floor(Number(state.maxBuyLamports(mint))) / LAMPORTS;
         let amount = Math.min(capSol * 0.97, stake, p.maxExposureSol - exposure);
         if (amount > free - txSol) amount = free - txSol;
+        // Guard: a non-finite size (e.g. a NaN buy cap on unseen data) would
+        // throw inside the BigInt conversion below and kill the whole batch,
+        // so skip the entry instead of sizing it.
+        if (!Number.isFinite(amount)) continue;
         if (amount < p.minBuySol) continue;
         orders.push({ side: 'buy', mint, quote_lamports: BigInt(Math.floor(amount * LAMPORTS)), max_slippage_bps: p.buySlipBps });
         free -= amount + txSol;
