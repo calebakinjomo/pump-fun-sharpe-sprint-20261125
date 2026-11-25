@@ -103,11 +103,24 @@ export interface Params {
 }
 
 // The settings main.ts trades with. Chosen for Sharpe, not for the biggest
-// dev PnL: the stake is half the size the earlier PnL bots used, the exits
-// are tighter, and the hold is shorter, so the equity curve moves in small
-// steps and no single coin can swing an hour.
+// dev PnL. Variants graded on the kit's dev window (process driver):
+//   v1 tight exits (take half +25%, stop -8%, 120-slot hold, stake 0.15,
+//      cross 25): PnL +0.020 SOL, Sharpe 0.029 — tight exits strangled the
+//      runners that pay for the hour.
+//   A loose exits (tp1 +50% / third, full +190%, stop -12.5%, 200 slots,
+//     stake 0.15, cross 30): PnL +0.302 SOL, Sharpe 0.161, max DD 2.0%.
+//   C A + trailing stop armed +50% / 20%: PnL +0.161 SOL, Sharpe 0.131 —
+//     the trail cuts runners, as the earlier PnL bots also found.
+//   D loose exits, stake 0.30, cross 25: PnL +0.210 SOL, Sharpe 0.102 —
+//     the earlier crossing catches more losers than runners.
+//   B (these settings) loose exits, stake 0.30, cross 30: PnL +0.627 SOL,
+//     Sharpe 0.171, max DD 3.8%, 63 round trips over 62 coins. Best Sharpe
+//     of the grid, and the stake only scales the trade: the Sharpe is set
+//     by letting runners run and cutting losers at -12.5% inside 200 slots.
+// The stress median (grade-local --stress) is the honest expectation, not
+// any of these dev figures: the final window is fresh data.
 export const DEFAULT_PARAMS: Params = {
-  crossRqSol: 25,
+  crossRqSol: 30,
   minCrossAge: 20,
   maxDevBuySol: 10,
   skipDevSold: true,
@@ -116,21 +129,21 @@ export const DEFAULT_PARAMS: Params = {
   minBuys: 3,
   minBuyers: 3,
   lastMustBeBuy: true,
-  stakeSol: 0.15,
+  stakeSol: 0.3,
   minBuySol: 0.02,
-  tp1: 0.25,
-  tp1Part: 0.5,
-  tpFull: 1.0,
-  stopLoss: 0.08,
-  trailArm: 0.4,
-  trail: 0.15,
-  maxHold: 120,
+  tp1: 0.5,
+  tp1Part: 0.33,
+  tpFull: 1.9,
+  stopLoss: 0.125,
+  trailArm: 1000,
+  trail: 0.2,
+  maxHold: 200,
   bigSellSol: 1000,
   exitFlowWindow: 20,
   exitFlowSol: 1000,
   cooldown: 100,
   maxEntries: 1,
-  maxExposureSol: 1.5,
+  maxExposureSol: 2.0,
   buySlipBps: 10_000,
   sellSlipBps: 10_000,
   targetCoins: 40,
